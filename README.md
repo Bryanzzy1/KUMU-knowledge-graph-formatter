@@ -1,4 +1,4 @@
-#Kumu Knowledge Graph JSON Generator
+###Kumu Knowledge Graph JSON Generator
 
 ## 🎯 Goal
 
