@@ -75,52 +75,6 @@ Contains postconditions with linked precondition references.
      "connections": [...]
    }
 
-   📄 Output File Format
-
-The script outputs a file named: kumu_graph_complete.json
-
-Example Structure:
-
-{
-  "elements": [
-    {
-      "label": "D3-CIA(SomeTech)",
-      "type": "Technique",
-      "description": "SomeTech"
-    },
-    {
-      "label": "D3-CIA-I1",
-      "type": "Postcondition",
-      "description": "System must be isolated"
-    },
-    {
-      "label": "D3-CIA-C1P",
-      "type": "Precondition",
-      "description": "Network traffic is encrypted"
-    }
-  ],
-  "connections": [
-    {
-      "from": "D3-CIA(SomeTech)",
-      "to": "D3-CIA-I1",
-      "type": "is_postcondition_for",
-      "direction": "directed"
-    },
-    {
-      "from": "D3-CIA-C1P",
-      "to": "D3-CIA(SomeTech)",
-      "type": "results_in_postcondition",
-      "direction": "directed"
-    },
-    {
-      "from": "D3-CIA-I1",
-      "to": "D3-CIA-C1P",
-      "type": "semantically_links_to",
-      "direction": "directed"
-    }
-  ]
-}
-
 ## 📄 Output File Format
 
 The script outputs a file named: `kumu_graph_complete.json`
