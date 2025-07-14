@@ -130,6 +130,7 @@ Run the script from a terminal or notebook: `python your_script_name.py`
 
 If all files are correctly formatted and available, it will output the JSON file: kumu_graph_complete.json
 You can now import this file into Kumu under the "Data" → "Import JSON Blueprint" section.
+
 ---
 ## 📝 Notes
 - All labels are validated to avoid duplication or invalid entries.
