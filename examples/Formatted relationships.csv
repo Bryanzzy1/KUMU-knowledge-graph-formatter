@@ -1,0 +1,3 @@
+Tech ID,Tech Name,List of Precond,List of PostCond
+D3-CIA,Credential Isolation,System must be isolated; Access controls enforced,Network traffic is encrypted; Credentials rotated
+D3-NTA,Network Traffic Analysis,Sensors deployed,Anomalies detected

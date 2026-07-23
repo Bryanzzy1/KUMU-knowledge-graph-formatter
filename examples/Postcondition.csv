@@ -1,0 +1,4 @@
+index,Postcondition,Matching Preconditions from ChatGPT
+D3-CIA-C1,Network traffic is encrypted,"D3-CIA-I1, D3-CIA-I2"
+D3-CIA-C2,Credentials rotated,D3-CIA-I2
+D3-NTA-C1,Anomalies detected,D3-NTA-I1

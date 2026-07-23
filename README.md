@@ -1,142 +1,135 @@
-### Kumu Knowledge Graph JSON Generator
+# Kumu Knowledge Graph Formatter
 
-## 🎯 Goal
+Reads three CSV files of cybersecurity techniques, preconditions, and
+postconditions and writes a [Kumu](https://kumu.io) JSON blueprint you can
+import to build a semantic knowledge graph.
 
-This Python script reads structured CSV files containing cybersecurity techniques, preconditions, and postconditions, then generates a **Kumu-compatible JSON blueprint** to build a **semantic knowledge graph** in the [Kumu](https://kumu.io) visualization tool.
+The graph has three node types and three edge types:
 
-The graph includes:
-- Nodes for Techniques, Preconditions, and Postconditions  
-- Edges showing:
-  - Preconditions belonging to Techniques
-  - Techniques resulting in Postconditions
-  - Semantic relationships between Postconditions and linked Preconditions
+| Node | |
+| --- | --- |
+| Technique | a defensive or offensive technique |
+| Precondition | a state required before a technique applies |
+| Postcondition | a state a technique produces |
 
----
+| Edge | From | To |
+| --- | --- | --- |
+| `is_precondition_for` | Precondition | Technique |
+| `results_in_postcondition` | Technique | Postcondition |
+| `semantically_links_to` | Precondition | Postcondition |
 
-## 📂 Required CSV Input Files
+## Input files
 
-The script requires **three specifically formatted CSV files** placed in the same directory:
+Three CSVs in one directory. Column headers must match, and the headers below
+are the defaults (override any of them, see Configuration).
 
-### 1. `Formatted relationships.csv`
-Defines the core techniques with associated preconditions and postconditions.
+`Formatted relationships.csv`, the core techniques with their conditions as
+delimited lists:
 
-| Tech ID | Tech Name | List of Precond             | List of PostCond            |
-|---------|-----------|-----------------------------|-----------------------------|
-| D3-CIA  | SomeTech  | Precondition A; Precondition B | Postcondition X; Postcondition Y |
+| Tech ID | Tech Name | List of Precond | List of PostCond |
+| --- | --- | --- | --- |
+| D3-CIA | Credential Isolation | System must be isolated; Access controls enforced | Network traffic is encrypted; Credentials rotated |
 
-### 2. `Precondition.csv`
-Contains a list of preconditions with IDs and descriptions.
+`Precondition.csv`, precondition IDs and descriptions:
 
-| index        | precondition            |
-|--------------|-------------------------|
-| D3-CIA-I1    | System must be isolated |
+| index | precondition |
+| --- | --- |
+| D3-CIA-I1 | System must be isolated |
 
-### 3. `Postcondition.csv`
-Contains postconditions with linked precondition references.
+`Postcondition.csv`, postconditions and the preconditions they link back to:
 
-| index        | Postcondition                    | Matching Preconditions from ChatGPT |
-|--------------|----------------------------------|--------------------------------------|
-| D3-CIA-C1    | Network traffic is encrypted     | D3-CIA-I1, D3-CIA-I2                 |
+| index | Postcondition | Matching Preconditions from ChatGPT |
+| --- | --- | --- |
+| D3-CIA-C1 | Network traffic is encrypted | D3-CIA-I1, D3-CIA-I2 |
 
-💡 **Note**:  
-- Column headers must exactly match the above.
-- The `index` column in `Precondition.csv` and `Postcondition.csv` is renamed during processing for clarity.
+A condition ID is a technique ID plus a suffix (`D3-CIA-I1` belongs to
+`D3-CIA`), which is how conditions connect to their parent technique.
 
----
+## How it works
 
-## ⚙️ How the Code Works
+1. Add every technique as a node.
+2. Add every precondition as a node and connect it to its parent technique.
+3. Add every postcondition as a node, suffixed with `P` so it never collides
+   with a precondition of the same base ID.
+4. Connect each technique to the postconditions it produces.
+5. Connect each precondition to the postconditions that link back to it.
 
-### Step-by-Step Breakdown:
+Nodes are deduplicated by label, edges by (from, to, type). Rows with a
+missing ID or an unresolvable parent are skipped and logged under `--verbose`.
 
-1. **Read and Rename Columns**  
-   Loads and normalizes column names across the three CSV files for consistency.
+## Install
 
-2. **Map Data**  
-   Creates internal mappings:
-   - `Technique_ID` ↔ `Technique_Name`
-   - `Precondition_ID` ↔ `Precondition_Description`
-   - `Postcondition_ID` ↔ `Postcondition_Description`
+```bash
+pip install -r requirements.txt
+```
 
-3. **Construct Relationships**  
-   - Links preconditions to techniques
-   - Links techniques to postconditions
-   - Links postconditions to preconditions (semantic matching)
+## Usage
 
-4. **Generate Kumu Elements and Connections**  
-   Builds a list of `elements` and `connections` using:
-   - `add_element()` for node creation
-   - `add_connection()` for edge creation with deduplication
+```bash
+python -m kumu_formatter -i path/to/csvs -o kumu_graph.json
+```
 
-5. **Export JSON**  
-   The final structure is saved as:
-   ```json
-   {
-     "elements": [...],
-     "connections": [...]
-   }
+Run against the bundled sample data:
 
----
-## 📄 Output File Format
+```bash
+python -m kumu_formatter -i examples -o out.json
+```
 
-The script outputs a file named: `kumu_graph_complete.json`
+Import the output into Kumu under Data, Import JSON Blueprint.
 
-### Example Structure:
+| Flag | Meaning |
+| --- | --- |
+| `-i, --input-dir` | directory holding the three CSVs (default: current) |
+| `-o, --output` | output JSON path (default: `<input-dir>/kumu_graph_complete.json`) |
+| `--relationships-file`, `--precondition-file`, `--postcondition-file` | override input file names |
+| `-v, --verbose` | log every skipped or unmatched row |
+
+## Configuration
+
+All file names, column headers, delimiters, and node/edge type labels live in
+`kumu_formatter/config.py`. Pass a `Config` into `build_graph` to run on data
+that uses different headers:
+
+```python
+from kumu_formatter import Config, build_graph
+
+config = Config(technique_id_col="Technique", list_delimiter=",")
+graph = build_graph("path/to/csvs", config)
+graph.to_dict()
+```
+
+## Output
 
 ```json
 {
   "elements": [
-    {
-      "label": "D3-CIA(SomeTech)",
-      "type": "Technique",
-      "description": "SomeTech"
-    },
-    {
-      "label": "D3-CIA-I1",
-      "type": "Postcondition",
-      "description": "System must be isolated"
-    },
-    {
-      "label": "D3-CIA-C1P",
-      "type": "Precondition",
-      "description": "Network traffic is encrypted"
-    }
+    { "label": "D3-CIA(Credential Isolation)", "type": "Technique", "description": "Credential Isolation" },
+    { "label": "D3-CIA-I1", "type": "Precondition", "description": "System must be isolated" },
+    { "label": "D3-CIA-C1P", "type": "Postcondition", "description": "Network traffic is encrypted" }
   ],
   "connections": [
-    {
-      "from": "D3-CIA(SomeTech)",
-      "to": "D3-CIA-I1",
-      "type": "is_postcondition_for",
-      "direction": "directed"
-    },
-    {
-      "from": "D3-CIA-C1P",
-      "to": "D3-CIA(SomeTech)",
-      "type": "results_in_postcondition",
-      "direction": "directed"
-    },
-    {
-      "from": "D3-CIA-I1",
-      "to": "D3-CIA-C1P",
-      "type": "semantically_links_to",
-      "direction": "directed"
-    }
+    { "from": "D3-CIA-I1", "to": "D3-CIA(Credential Isolation)", "direction": "directed", "type": "is_precondition_for" },
+    { "from": "D3-CIA(Credential Isolation)", "to": "D3-CIA-C1P", "direction": "directed", "type": "results_in_postcondition" },
+    { "from": "D3-CIA-I1", "to": "D3-CIA-C1P", "direction": "directed", "type": "semantically_links_to" }
   ]
 }
 ```
 
----
-## 🧴 Usage
-Run the script from a terminal or notebook: `python your_script_name.py`
+## Layout
 
-If all files are correctly formatted and available, it will output the JSON file: kumu_graph_complete.json
-You can now import this file into Kumu under the "Data" → "Import JSON Blueprint" section.
+```
+kumu_formatter/
+  builder.py    # read CSVs, build the graph
+  graph.py      # node/edge accumulator with dedup
+  config.py     # file names, columns, delimiters, type labels
+  cli.py        # command-line entry point
+examples/       # sample CSVs
+tests/          # pytest suite
+```
 
----
-## 📝 Notes
-- All labels are validated to avoid duplication or invalid entries.
-- Missing condition IDs or mismatches are logged with warnings but skipped to prevent failure.
-- Elements are automatically deduplicated.
----
-## 🛠️ Dependencies
-Ensure you have the following installed: `pip install pandas`
-If using in a Jupyter environment, IPython.display is also required for DataFrame preview.
+## Tests
+
+```bash
+pip install pytest
+python -m pytest
+```

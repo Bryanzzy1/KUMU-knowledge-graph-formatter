@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kumu-formatter"
+version = "0.1.0"
+description = "Build a Kumu JSON knowledge-graph blueprint from technique, precondition, and postcondition CSVs."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["pandas>=1.3"]
+
+[project.scripts]
+kumu-formatter = "kumu_formatter.cli:main"
+
+[tool.setuptools]
+packages = ["kumu_formatter"]
