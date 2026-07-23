@@ -115,18 +115,6 @@ graph.to_dict()
 }
 ```
 
-## Layout
-
-```
-kumu_formatter/
-  builder.py    # read CSVs, build the graph
-  graph.py      # node/edge accumulator with dedup
-  config.py     # file names, columns, delimiters, type labels
-  cli.py        # command-line entry point
-examples/       # sample CSVs
-tests/          # pytest suite
-```
-
 ## Tests
 
 ```bash
