@@ -59,7 +59,3 @@ def main(argv: list[str] | None = None) -> int:
         f"{len(graph.connections)} connections to {output}"
     )
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
