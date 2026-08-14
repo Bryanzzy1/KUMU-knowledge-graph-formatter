@@ -103,7 +103,14 @@ def build_graph(input_dir: str | Path, config: Config | None = None) -> KumuGrap
             row.get(config.postcond_desc_col, ""),
         )
 
-    # 4. Connect techniques to the postconditions they produce.
+    # 4. Connect techniques to the postconditions they produce. Reuse the real
+    #    postcondition node whose description matches, else fall back to the
+    #    description text as a label.
+    label_by_desc = {
+        e["description"]: e["label"]
+        for e in reversed(graph.elements)
+        if e["type"] == config.postcondition_type
+    }
     for _, row in df_rel.iterrows():
         tech_id = row.get(config.technique_id_col)
         tech_name = row.get(config.technique_name_col)
@@ -116,14 +123,9 @@ def build_graph(input_dir: str | Path, config: Config | None = None) -> KumuGrap
         for post_desc in (p.strip() for p in raw.split(config.list_delimiter)):
             if not post_desc:
                 continue
-            # Prefer a real postcondition node whose description matches.
-            match = next(
-                (e["label"] for e in graph.elements
-                 if e["type"] == config.postcondition_type and e["description"] == post_desc),
-                post_desc,
-            )
-            graph.add_element(match, config.postcondition_type, post_desc)
-            graph.add_connection(tech_label, match, config.technique_to_postcond_type)
+            label = label_by_desc.get(post_desc, post_desc)
+            graph.add_element(label, config.postcondition_type, post_desc)
+            graph.add_connection(tech_label, label, config.technique_to_postcond_type)
 
     # 5. Semantic links: each postcondition points at its linked preconditions.
     for _, row in df_post.iterrows():
